@@ -63,12 +63,21 @@ class Path {
         this.bbox.update(point)
         this.points.push(point)
     }
+    last_delta() {
+        if (this.points.length <= 1) {
+            return new Point(0,0,0)
+        }
+        let len = this.points.length
+        return new Point(this.points[len - 1].x - this.points[len - 2].x,
+            this.points[len - 1].y - this.points[len - 2].y,
+            this.points[len - 1].z - this.points[len - 2].z)
+    }
 }
 
 
 let HosePath = new Path();
 let REFRESH_INTERVAL = 500
-let FAKE_DATA = false
+let FAKE_DATA = true
 
 function init() {
     initCanvas()
@@ -86,7 +95,9 @@ function initCanvas() {
     canvas.height = window.innerHeight
 
     canvas.onclick = (event) => {
-        HosePath.push(new Point(event.pageX, event.pageY, 2000))
+        if (FAKE_DATA) {
+            HosePath.push(new Point(event.pageX, event.pageY, 2000))
+        }
         updateUI()
         // circle_add()
     }
@@ -141,6 +152,7 @@ function updateLocal() {
 function updateUI() {
     ctx.clearRect(0,0,canvas.width,canvas.height)
     ctx.fillStyle = "blue"
+    let delta = HosePath.last_delta()
     ctx.save()
     ctx.beginPath()
     ctx.translate(canvas.width / 2, canvas.height / 2)
@@ -177,4 +189,6 @@ function updateUI() {
     ctx.stroke()
     ctx.closePath()
     ctx.restore()
+    ctx.fillText((FAKE_DATA)?"GPS":"FAKE    ", 10, 10)
+    ctx.fillText(`Delta: (${delta.x}, ${delta.y}, ${delta.z})`, 10,20)
 }
