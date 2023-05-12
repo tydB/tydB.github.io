@@ -6,7 +6,6 @@ let last_center = [0,0]
 let canvas
 let ctx
 
-
 let REFRESH_INTERVAL = 500
 let FAKE_DATA = false
 
