@@ -82,7 +82,7 @@ let FAKE_DATA = false
 function init() {
     initCanvas()
     // setTimeout(updateLocal, REFRESH_INTERVAL)
-    // updateLocal()
+    updateLocal()
 }
 
 function toggleDataType() {
@@ -135,7 +135,7 @@ function updateLocal() {
         setTimeout(updateLocal, REFRESH_INTERVAL / 50)
     }
     else {
-
+        console.log("GPS")
         let nav = navigator.geolocation
         nav.getCurrentPosition((pos) => {
             console.log("Got Local")
@@ -173,6 +173,9 @@ function updateUI() {
     if (scale_x < scale_y) {
         scale = scale_x
     }
+    if (scale === Infinity) {
+        scale = 1
+    }
     console.log(`Scale ${scale}`)
     ctx.scale(scale, scale)
     console.log(`Centers ${center_x}, ${center_y}`)
@@ -189,6 +192,6 @@ function updateUI() {
     ctx.stroke()
     ctx.closePath()
     ctx.restore()
-    ctx.fillText((FAKE_DATA)?"GPS":"FAKE    ", 10, 10)
+    ctx.fillText((FAKE_DATA)?"Fake":"GPS", 10, 10)
     ctx.fillText(`Delta: (${delta.x}, ${delta.y}, ${delta.z})`, 10,20)
 }
