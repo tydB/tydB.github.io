@@ -77,7 +77,7 @@ class Path {
 
 let HosePath = new Path();
 let REFRESH_INTERVAL = 500
-let FAKE_DATA = true
+let FAKE_DATA = false
 
 function init() {
     initCanvas()
