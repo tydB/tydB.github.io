@@ -155,12 +155,8 @@ function updateUI() {
     let scale_x = 1
     let scale_y = 1
     let inside_margin = 10
-    if (width > canvas.width  - (inside_margin * 2)) {
-        scale_x = (canvas.width  - (inside_margin * 2)) / width
-    }
-    if (height > canvas.height  - (inside_margin * 2)) {
-        scale_y = (canvas.height  - (inside_margin * 2)) / height
-    }
+    scale_x = (canvas.width  - (inside_margin * 2)) / width
+    scale_y = (canvas.height  - (inside_margin * 2)) / height
     scale = scale_y
     if (scale_x < scale_y) {
         scale = scale_x
