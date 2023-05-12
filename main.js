@@ -6,13 +6,74 @@ let last_center = [0,0]
 let canvas
 let ctx
 
+class BBox {
+    constructor() {
+        this.x_small = Infinity
+        this.y_small = Infinity
+        this.x_large = -Infinity
+        this.y_large = -Infinity
+        this.z_small = Infinity
+        this.z_large = -Infinity
+    }
+    width() {
+        return this.x_large - this.x_small
+    }
+    height() {
+        return this.y_large - this.y_small
+    }
+    draw(ctx) {
+        ctx.strokeRect(this.x_small, this.y_small, this.width(), this.height())
+    }
+    update(point) {
+        if (point.x < this.x_small) {
+            this.x_small = point.x
+        }
+        if (point.y < this.y_small) {
+            this.y_small = point.y
+        }
+        if (point.z < this.z_small) {
+            this.z_small = point.z
+        }
+        if (point.x > this.x_large) {
+            this.x_large = point.x
+        }
+        if (point.y > this.y_large) {
+            this.y_large = point.y
+        }
+        if (point.z > this.z_large) {
+            this.z_large = point.z
+        }
+    }
+}
+
+class Point {
+    constructor(x, y, z) {
+        this.x = x
+        this.y = y
+        this.z = z
+    }
+}
+
+class Path {
+    constructor() {
+        this.bbox = new BBox()
+        this.points = []
+    }
+    push(point) {
+        this.bbox.update(point)
+        this.points.push(point)
+    }
+}
+
+
+let HosePath = new Path();
 let REFRESH_INTERVAL = 500
 let FAKE_DATA = false
 
 function init() {
     initCanvas()
     // setTimeout(updateLocal, REFRESH_INTERVAL)
-    updateLocal()
+    // updateLocal()
 }
 
 function toggleDataType() {
@@ -23,23 +84,44 @@ function initCanvas() {
     canvas = document.getElementById('draw_space')
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
+
+    canvas.onclick = (event) => {
+        HosePath.push(new Point(event.pageX, event.pageY, 2000))
+        updateUI()
+        // circle_add()
+    }
+
     ctx = canvas.getContext('2d')
     console.log(ctx)
 }
 
+function circle_add() {
+    if (HosePath.points.length == 0) {
+        HosePath.push(new Point(0,0,0))
+    }
+    else {
+        let len = HosePath.points.length
+        let across_scale = 1
+        HosePath.push(new Point(Math.sin(len * across_scale) * len , Math.cos(len * across_scale) * len, 2000 + len))
+    }
+    updateUI()
+    setTimeout(circle_add, REFRESH_INTERVAL)
+}
+
 function fakeUpdate() {
     let x = 0;
-    if (pos_array.length != 0) {
-        x = pos_array[pos_array.length - 1][0] + 5
+    if (HosePath.points.length != 0) {
+        x = HosePath.points[HosePath.points.length - 1].x + 15
     }
-    pos_array.push([x,Math.random() * 50   ])
+    // HosePath.push([x,Math.random() * 50, Math.random() * 50 + 2000])
+    HosePath.push(new Point(x, Math.random() * 50, Math.random() * 50 + 2000))
     updateUI()
 }
 
 function updateLocal() {
     if (FAKE_DATA) {
         fakeUpdate()
-        setTimeout(updateLocal, REFRESH_INTERVAL)
+        setTimeout(updateLocal, REFRESH_INTERVAL / 50)
     }
     else {
 
@@ -48,7 +130,8 @@ function updateLocal() {
             console.log("Got Local")
             let lat = pos.coords.latitude
             let long = pos.coords.longitude
-            pos_array.push([lat,long])
+            let alt = pos.coords.altitude
+            HosePath.push(new Point(lat,long,alt))
             setTimeout(updateLocal, REFRESH_INTERVAL)
             updateUI()
         })
@@ -56,23 +139,46 @@ function updateLocal() {
 }
     
 function updateUI() {
-    // console.log(pos_array.length)
-    let new_center = [0,0]
     ctx.clearRect(0,0,canvas.width,canvas.height)
+    ctx.fillStyle = "blue"
     ctx.save()
-    ctx.translate((canvas.width / 2) - last_center[0], (canvas.height / 2) - last_center[1])
     ctx.beginPath()
-    ctx.moveTo(pos_array[0][0], pos_array[0][1])
-    pos_array.forEach((pos) => {
-        new_center[0] += pos[0]
-        new_center[1] += pos[1]
-        ctx.lineTo(pos[0], pos[1])
-        ctx.fillRect(pos[0] - 5, pos[1] - 5, 10, 10)
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.fillRect(0- 5, 0 - 5, 10, 10)
+    ctx.fillStyle = "black"
+    // translate to the center of the bbox is in the center of the canvas
+    let width = HosePath.bbox.width()
+    let height = HosePath.bbox.height()
+    let center_x = HosePath.bbox.x_small + width / 2
+    let center_y = HosePath.bbox.y_small + height / 2
+    let scale = 1
+    let scale_x = 1
+    let scale_y = 1
+    let inside_margin = 10
+    if (width > canvas.width  - (inside_margin * 2)) {
+        scale_x = (canvas.width  - (inside_margin * 2)) / width
+    }
+    if (height > canvas.height  - (inside_margin * 2)) {
+        scale_y = (canvas.height  - (inside_margin * 2)) / height
+    }
+    scale = scale_y
+    if (scale_x < scale_y) {
+        scale = scale_x
+    }
+    console.log(`Scale ${scale}`)
+    ctx.scale(scale, scale)
+    console.log(`Centers ${center_x}, ${center_y}`)
+    ctx.translate(-center_x, -center_y)
+
+    HosePath.bbox.draw(ctx)
+
+    HosePath.points.forEach((point) => {
+        ctx.save()
+        let size = (point.z / 2000) + 5
+        ctx.fillRect(point.x - size / 2, point.y - size / 2, size, size)
+        ctx.restore()
     })
     ctx.stroke()
     ctx.closePath()
     ctx.restore()
-    new_center[0] /= pos_array.length
-    new_center[1] /= pos_array.length
-    last_center = new_center
 }
